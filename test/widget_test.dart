@@ -5,6 +5,9 @@ import 'package:doroteia_lab/core/router/app_router.dart';
 import 'package:doroteia_lab/features/auth/domain/entities/user_entity.dart';
 import 'package:doroteia_lab/features/auth/domain/repositories/auth_repository.dart';
 import 'package:doroteia_lab/features/auth/presentation/providers/auth_providers.dart';
+import 'package:doroteia_lab/features/catalog/data/catalog_storage.dart';
+import 'package:doroteia_lab/features/catalog/domain/entities/catalog_product.dart';
+import 'package:doroteia_lab/features/catalog/presentation/providers/catalog_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -59,24 +62,65 @@ class _TestAuthRepository implements AuthRepository {
   }
 }
 
+class _MemoryCatalogStorage implements CatalogStorage {
+  _MemoryCatalogStorage([List<CatalogProduct> products = const []])
+    : _products = [...products];
+
+  List<CatalogProduct> _products;
+
+  @override
+  Future<List<CatalogProduct>> readProducts() async => [..._products];
+
+  @override
+  Future<void> saveProducts(List<CatalogProduct> products) async {
+    _products = [...products];
+  }
+}
+
 void main() {
+  Widget appFor(_TestAuthRepository repository) {
+    return ProviderScope(
+      overrides: [
+        authRepositoryProvider.overrideWithValue(repository),
+        catalogStorageProvider.overrideWithValue(_MemoryCatalogStorage()),
+      ],
+      child: const DoroteiaLabApp(),
+    );
+  }
+
   testWidgets('exibe a tela de login para usuário não autenticado', (
     WidgetTester tester,
   ) async {
     final repository = _TestAuthRepository();
     addTearDown(repository.dispose);
 
-    await tester.pumpWidget(
-      ProviderScope(
-        overrides: [authRepositoryProvider.overrideWithValue(repository)],
-        child: const DoroteiaLabApp(),
-      ),
-    );
+    await tester.pumpWidget(appFor(repository));
     await tester.pumpAndSettle();
 
     expect(find.text('Doroteia Lab'), findsOneWidget);
     expect(find.text('Entrar no Sistema'), findsOneWidget);
     expect(find.text('Criar uma conta'), findsOneWidget);
+  });
+
+  testWidgets('configura autofill para credenciais de login', (
+    WidgetTester tester,
+  ) async {
+    final repository = _TestAuthRepository();
+    addTearDown(repository.dispose);
+
+    await tester.pumpWidget(appFor(repository));
+    await tester.pumpAndSettle();
+
+    final fields = tester
+        .widgetList<EditableText>(find.byType(EditableText))
+        .toList();
+
+    expect(fields, hasLength(2));
+    expect(fields.first.autofillHints, const [
+      AutofillHints.username,
+      AutofillHints.email,
+    ]);
+    expect(fields.last.autofillHints, const [AutofillHints.password]);
   });
 
   testWidgets('oculta o painel de marca em telas menores que 800 px', (
@@ -90,12 +134,7 @@ void main() {
     final repository = _TestAuthRepository();
     addTearDown(repository.dispose);
 
-    await tester.pumpWidget(
-      ProviderScope(
-        overrides: [authRepositoryProvider.overrideWithValue(repository)],
-        child: const DoroteiaLabApp(),
-      ),
-    );
+    await tester.pumpWidget(appFor(repository));
     await tester.pumpAndSettle();
 
     expect(find.text('Inovação em 3D', findRichText: true), findsOneWidget);
@@ -113,7 +152,10 @@ void main() {
     final repository = _TestAuthRepository();
     addTearDown(repository.dispose);
     final container = ProviderContainer(
-      overrides: [authRepositoryProvider.overrideWithValue(repository)],
+      overrides: [
+        authRepositoryProvider.overrideWithValue(repository),
+        catalogStorageProvider.overrideWithValue(_MemoryCatalogStorage()),
+      ],
     );
     addTearDown(container.dispose);
 
@@ -129,26 +171,24 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Entrar no Sistema'), findsOneWidget);
-    expect(find.text('Dados do Projeto'), findsNothing);
+    expect(find.text('Módulos do Sistema'), findsNothing);
   });
 
-  testWidgets('redireciona usuário autenticado para a home', (
+  testWidgets('redireciona usuário autenticado para o dashboard', (
     WidgetTester tester,
   ) async {
     const user = UserEntity(id: 'user-id', email: 'user@example.com');
     final repository = _TestAuthRepository(user: user);
     addTearDown(repository.dispose);
 
-    await tester.pumpWidget(
-      ProviderScope(
-        overrides: [authRepositoryProvider.overrideWithValue(repository)],
-        child: const DoroteiaLabApp(),
-      ),
-    );
+    await tester.pumpWidget(appFor(repository));
     await tester.pumpAndSettle();
 
-    expect(find.text('Dados do Projeto'), findsOneWidget);
-    expect(find.text('Resumo do Orçamento'), findsOneWidget);
+    expect(find.text('Módulos do Sistema'), findsOneWidget);
+    expect(
+      find.byKey(const ValueKey('dashboard-module-calculadora')),
+      findsOneWidget,
+    );
   });
 
   testWidgets('login pelo provider redireciona para a home', (
@@ -157,12 +197,7 @@ void main() {
     final repository = _TestAuthRepository();
     addTearDown(repository.dispose);
 
-    await tester.pumpWidget(
-      ProviderScope(
-        overrides: [authRepositoryProvider.overrideWithValue(repository)],
-        child: const DoroteiaLabApp(),
-      ),
-    );
+    await tester.pumpWidget(appFor(repository));
     await tester.pumpAndSettle();
 
     await tester.enterText(
@@ -173,7 +208,10 @@ void main() {
     await tester.tap(find.text('Entrar no Sistema'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Dados do Projeto'), findsOneWidget);
-    expect(find.text('Resumo do Orçamento'), findsOneWidget);
+    expect(find.text('Módulos do Sistema'), findsOneWidget);
+    expect(
+      find.byKey(const ValueKey('dashboard-product-count')),
+      findsOneWidget,
+    );
   });
 }

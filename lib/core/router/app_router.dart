@@ -5,6 +5,8 @@ import '../../features/auth/presentation/pages/login_page.dart';
 import '../../features/auth/presentation/providers/auth_providers.dart';
 import '../../features/calculator/presentation/pages/home_page.dart';
 import '../../features/catalog/presentation/pages/catalog_page.dart';
+import '../../features/dashboard/presentation/pages/dashboard_page.dart';
+import '../../features/profile/presentation/pages/profile_page.dart';
 
 final appRouterProvider = Provider<GoRouter>((ref) {
   final authState = ref.watch(authStateProvider);
@@ -32,12 +34,27 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/home',
         name: 'home',
-        builder: (context, state) => const HomePage(),
+        builder: (context, state) => const DashboardPage(),
       ),
       GoRoute(
-        path: '/catalog',
+        path: '/calculadora',
+        name: 'calculator',
+        builder: (context, state) => const CalculatorPage(),
+      ),
+      GoRoute(
+        path: '/calculator',
+        redirect: (context, state) => '/calculadora',
+      ),
+      GoRoute(
+        path: '/catalogo',
         name: 'catalog',
         builder: (context, state) => const CatalogPage(),
+      ),
+      GoRoute(path: '/catalog', redirect: (context, state) => '/catalogo'),
+      GoRoute(
+        path: '/perfil',
+        name: 'profile',
+        builder: (context, state) => const ProfilePage(),
       ),
     ],
   );

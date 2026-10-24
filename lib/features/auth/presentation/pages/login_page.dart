@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/theme/app_colors.dart';
 import '../providers/auth_providers.dart';
 
-const _orange = Color(0xFFFF6B00);
-const _ink = Color(0xFF111827);
-const _muted = Color(0xFF667085);
-const _fieldBorder = Color(0xFFD0D5DD);
-const _fieldFill = Color(0xFFF9FAFB);
+const _orange = AppColors.brand;
+const _ink = AppColors.lightInk;
+const _muted = AppColors.lightMuted;
+const _fieldBorder = AppColors.fieldBorder;
+const _fieldFill = AppColors.fieldFill;
 
 class LoginPage extends ConsumerStatefulWidget {
   const LoginPage({super.key});
@@ -352,7 +353,10 @@ class _LoginFormPanel extends StatelessWidget {
                               enabled: !isLoading,
                               keyboardType: TextInputType.emailAddress,
                               textInputAction: TextInputAction.next,
-                              autofillHints: const [AutofillHints.email],
+                              autofillHints: const [
+                                AutofillHints.username,
+                                AutofillHints.email,
+                              ],
                               autocorrect: false,
                               validator: validateEmail,
                               style: const TextStyle(color: _ink, fontSize: 14),

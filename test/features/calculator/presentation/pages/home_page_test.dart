@@ -1,7 +1,7 @@
-import 'package:doroteia_lab/app.dart';
 import 'package:doroteia_lab/features/auth/domain/entities/user_entity.dart';
 import 'package:doroteia_lab/features/auth/domain/repositories/auth_repository.dart';
 import 'package:doroteia_lab/features/auth/presentation/providers/auth_providers.dart';
+import 'package:doroteia_lab/features/calculator/presentation/pages/home_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -46,7 +46,7 @@ void main() {
         overrides: [
           authRepositoryProvider.overrideWithValue(_AuthenticatedRepository()),
         ],
-        child: const DoroteiaLabApp(),
+        child: const MaterialApp(home: CalculatorPage()),
       ),
     );
     await tester.pumpAndSettle();

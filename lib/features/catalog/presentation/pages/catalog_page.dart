@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../../../core/theme/app_colors.dart';
 import '../../../auth/presentation/providers/auth_providers.dart';
 import '../../domain/entities/catalog_product.dart';
 import '../catalog_colors.dart';
@@ -148,7 +149,8 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
             _CatalogHeader(
               isSigningOut: authAction.isLoading,
               onAddProduct: _openProductForm,
-              onOpenCalculator: () => context.go('/home'),
+              onBackToDashboard: () => context.go('/home'),
+              onOpenCalculator: () => context.go('/calculadora'),
               onSignOut: _signOut,
             ),
             Expanded(
@@ -205,12 +207,14 @@ class _CatalogHeader extends StatelessWidget {
   const _CatalogHeader({
     required this.isSigningOut,
     required this.onAddProduct,
+    required this.onBackToDashboard,
     required this.onOpenCalculator,
     required this.onSignOut,
   });
 
   final bool isSigningOut;
   final VoidCallback onAddProduct;
+  final VoidCallback onBackToDashboard;
   final VoidCallback onOpenCalculator;
   final VoidCallback onSignOut;
 
@@ -218,7 +222,7 @@ class _CatalogHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     return DecoratedBox(
       decoration: const BoxDecoration(
-        color: Color(0xFF101012),
+        color: AppColors.header,
         border: Border(bottom: BorderSide(color: catalogBorder)),
       ),
       child: Padding(
@@ -235,6 +239,17 @@ class _CatalogHeader extends StatelessWidget {
                   runSpacing: 8,
                   crossAxisAlignment: WrapCrossAlignment.center,
                   children: [
+                    OutlinedButton.icon(
+                      onPressed: onBackToDashboard,
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: catalogTextPrimary,
+                        side: const BorderSide(color: catalogBorder),
+                      ),
+                      icon: const Icon(Icons.arrow_back_rounded, size: 18),
+                      label: Text(
+                        compact ? 'Dashboard' : 'Voltar ao Dashboard',
+                      ),
+                    ),
                     OutlinedButton.icon(
                       onPressed: onOpenCalculator,
                       style: OutlinedButton.styleFrom(
@@ -278,7 +293,18 @@ class _CatalogHeader extends StatelessWidget {
                     children: [brand, const SizedBox(height: 12), actions],
                   );
                 }
-                return Row(children: [brand, const Spacer(), actions]);
+                return Row(
+                  children: [
+                    brand,
+                    const SizedBox(width: 18),
+                    Expanded(
+                      child: Align(
+                        alignment: Alignment.centerRight,
+                        child: actions,
+                      ),
+                    ),
+                  ],
+                );
               },
             ),
           ),

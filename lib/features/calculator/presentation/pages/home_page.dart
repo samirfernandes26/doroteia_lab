@@ -4,23 +4,24 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
+import '../../../../core/theme/app_colors.dart';
 import '../../../auth/presentation/providers/auth_providers.dart';
 import '../providers/calculator_provider.dart';
 import '../widgets/share_budget_dialog.dart';
 
-const _orange = Color(0xFFFF6B00);
-const _green = Color(0xFF22D48A);
-const _background = Color(0xFF08090A);
-const _surface = Color(0xFF131316);
-const _surfaceRaised = Color(0xFF19191D);
-const _border = Color(0xFF2C2C32);
-const _textPrimary = Color(0xFFF7F7F8);
-const _textMuted = Color(0xFF9696A1);
+const _orange = AppColors.brand;
+const _green = AppColors.success;
+const _background = AppColors.background;
+const _surface = AppColors.surface;
+const _surfaceRaised = AppColors.surfaceRaised;
+const _border = AppColors.border;
+const _textPrimary = AppColors.textPrimary;
+const _textMuted = AppColors.textMuted;
 
 final _currency = NumberFormat.currency(locale: 'pt_BR', symbol: 'R\$');
 
-class HomePage extends ConsumerWidget {
-  const HomePage({super.key});
+class CalculatorPage extends ConsumerWidget {
+  const CalculatorPage({super.key});
 
   Future<void> _signOut(BuildContext context, WidgetRef ref) async {
     await ref.read(authControllerProvider.notifier).signOut();
@@ -49,7 +50,8 @@ class HomePage extends ConsumerWidget {
           children: [
             _CalculatorHeader(
               isSigningOut: authAction.isLoading,
-              onOpenCatalog: () => context.go('/catalog'),
+              onBackToDashboard: () => context.go('/home'),
+              onOpenCatalog: () => context.go('/catalogo'),
               onSignOut: () => _signOut(context, ref),
             ),
             Expanded(
@@ -105,11 +107,13 @@ class HomePage extends ConsumerWidget {
 class _CalculatorHeader extends StatelessWidget {
   const _CalculatorHeader({
     required this.isSigningOut,
+    required this.onBackToDashboard,
     required this.onOpenCatalog,
     required this.onSignOut,
   });
 
   final bool isSigningOut;
+  final VoidCallback onBackToDashboard;
   final VoidCallback onOpenCatalog;
   final VoidCallback onSignOut;
 
@@ -117,7 +121,7 @@ class _CalculatorHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     return DecoratedBox(
       decoration: const BoxDecoration(
-        color: Color(0xFF101012),
+        color: AppColors.header,
         border: Border(bottom: BorderSide(color: _border)),
       ),
       child: Padding(
@@ -134,6 +138,15 @@ class _CalculatorHeader extends StatelessWidget {
                   crossAxisAlignment: WrapCrossAlignment.center,
                   children: [
                     if (constraints.maxWidth >= 520) const _PrecisionBadge(),
+                    OutlinedButton.icon(
+                      onPressed: onBackToDashboard,
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: _textPrimary,
+                        side: const BorderSide(color: _border),
+                      ),
+                      icon: const Icon(Icons.arrow_back_rounded, size: 17),
+                      label: const Text('Voltar ao Dashboard'),
+                    ),
                     OutlinedButton.icon(
                       onPressed: onOpenCatalog,
                       style: OutlinedButton.styleFrom(
@@ -168,7 +181,18 @@ class _CalculatorHeader extends StatelessWidget {
                   );
                 }
 
-                return Row(children: [brand, const Spacer(), actions]);
+                return Row(
+                  children: [
+                    brand,
+                    const SizedBox(width: 18),
+                    Expanded(
+                      child: Align(
+                        alignment: Alignment.centerRight,
+                        child: actions,
+                      ),
+                    ),
+                  ],
+                );
               },
             ),
           ),
@@ -194,7 +218,7 @@ class _HeaderBrand extends StatelessWidget {
             gradient: const LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
-              colors: [Color(0xFFFF8A24), _orange],
+              colors: [AppColors.brandLight, _orange],
             ),
             shape: BoxShape.circle,
             border: Border.all(
