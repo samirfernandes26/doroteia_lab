@@ -7,6 +7,8 @@ abstract final class AppColors {
 
   static const success = Color(0xFF22D48A);
   static const catalogSuccess = Color(0xFF08A878);
+  static const mediumBatch = Color(0xFF3B82F6);
+  static const fullBatch = Color(0xFF10B981);
 
   static const background = Color(0xFF08090A);
   static const header = Color(0xFF101012);

@@ -22,6 +22,7 @@ class CatalogProductCard extends StatelessWidget {
     required this.onEdit,
     required this.onDelete,
     required this.onWhatsApp,
+    this.onOpenProject,
     super.key,
   });
 
@@ -32,11 +33,17 @@ class CatalogProductCard extends StatelessWidget {
   final VoidCallback onEdit;
   final VoidCallback onDelete;
   final VoidCallback onWhatsApp;
+  final VoidCallback? onOpenProject;
 
   @override
   Widget build(BuildContext context) {
     final normalizedQuantity = product.normalizeQuantity(quantity);
     final isFullBed = normalizedQuantity == product.bedCapacity;
+    final isMediumBed =
+        !isFullBed &&
+        product.mediumCapacity > 1 &&
+        product.mediumCapacity < product.bedCapacity &&
+        normalizedQuantity == product.mediumCapacity;
     final discount = product.discountPercentageFor(normalizedQuantity);
     final unitPrice = product.unitPriceFor(normalizedQuantity);
     final totalPrice = product.totalPriceFor(normalizedQuantity);
@@ -48,14 +55,16 @@ class CatalogProductCard extends StatelessWidget {
         color: catalogSurface,
         border: Border.all(
           color: isFullBed
-              ? catalogOrange.withValues(alpha: 0.82)
+              ? catalogFullGreen.withValues(alpha: 0.72)
+              : isMediumBed
+              ? catalogBlue.withValues(alpha: 0.72)
               : catalogBorder,
         ),
         borderRadius: BorderRadius.circular(15),
         boxShadow: isFullBed
             ? [
                 BoxShadow(
-                  color: catalogOrange.withValues(alpha: 0.08),
+                  color: catalogFullGreen.withValues(alpha: 0.08),
                   blurRadius: 24,
                 ),
               ]
@@ -66,7 +75,7 @@ class CatalogProductCard extends StatelessWidget {
         children: [
           _ProductHeader(
             product: product,
-            isFullBed: isFullBed,
+            onOpenProject: onOpenProject,
             onEdit: onEdit,
             onDelete: onDelete,
           ),
@@ -84,11 +93,23 @@ class CatalogProductCard extends StatelessWidget {
             onDecrement: onDecrement,
             onIncrement: onIncrement,
           ),
+          if (isMediumBed || isFullBed) ...[
+            const SizedBox(height: 13),
+            _EfficiencyBadge(
+              key: ValueKey(
+                '${isFullBed ? 'full' : 'medium'}-badge-${product.id}',
+              ),
+              capacity: isFullBed
+                  ? product.bedCapacity
+                  : product.mediumCapacity,
+              isFullBed: isFullBed,
+            ),
+          ],
           const SizedBox(height: 16),
           const Divider(color: catalogBorder, height: 1),
           const SizedBox(height: 14),
           _ValueRow(
-            label: 'Preço Unitário do Lote:',
+            label: 'Preço Unitário Ajustado:',
             value: _currency.format(unitPrice),
             badge: discount > 0
                 ? '-${discount.toStringAsFixed(discount >= 10 ? 0 : 1)}%'
@@ -164,13 +185,13 @@ class CatalogProductCard extends StatelessWidget {
 class _ProductHeader extends StatelessWidget {
   const _ProductHeader({
     required this.product,
-    required this.isFullBed,
+    required this.onOpenProject,
     required this.onEdit,
     required this.onDelete,
   });
 
   final CatalogProduct product;
-  final bool isFullBed;
+  final VoidCallback? onOpenProject;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
 
@@ -194,6 +215,15 @@ class _ProductHeader extends StatelessWidget {
                 ),
               ),
             ),
+            if (product.projectUrl.trim().isNotEmpty)
+              _HeaderAction(
+                key: ValueKey('project-link-${product.id}'),
+                tooltip: 'Abrir projeto 3D / STL',
+                icon: Icons.download_rounded,
+                color: catalogOrange,
+                emphasized: true,
+                onPressed: onOpenProject,
+              ),
             _HeaderAction(
               tooltip: 'Editar produto',
               icon: Icons.edit_outlined,
@@ -219,34 +249,6 @@ class _ProductHeader extends StatelessWidget {
               '${formatProductDimensions(product.dimensions)} cm',
               style: const TextStyle(color: catalogTextMuted, fontSize: 11),
             ),
-            if (isFullBed) ...[
-              const Spacer(),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
-                decoration: BoxDecoration(
-                  color: catalogOrange.withValues(alpha: 0.12),
-                  border: Border.all(
-                    color: catalogOrange.withValues(alpha: 0.55),
-                  ),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: const Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(Icons.bolt_rounded, color: catalogOrange, size: 13),
-                    SizedBox(width: 3),
-                    Text(
-                      'Mesa Cheia!',
-                      style: TextStyle(
-                        color: catalogOrange,
-                        fontSize: 10,
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
           ],
         ),
       ],
@@ -259,11 +261,16 @@ class _HeaderAction extends StatelessWidget {
     required this.tooltip,
     required this.icon,
     required this.onPressed,
+    this.color = catalogTextMuted,
+    this.emphasized = false,
+    super.key,
   });
 
   final String tooltip;
   final IconData icon;
-  final VoidCallback onPressed;
+  final VoidCallback? onPressed;
+  final Color color;
+  final bool emphasized;
 
   @override
   Widget build(BuildContext context) {
@@ -271,9 +278,81 @@ class _HeaderAction extends StatelessWidget {
       tooltip: tooltip,
       onPressed: onPressed,
       visualDensity: VisualDensity.compact,
-      color: catalogTextMuted,
+      color: color,
+      disabledColor: catalogTextMuted.withValues(alpha: 0.32),
+      style: emphasized
+          ? IconButton.styleFrom(
+              backgroundColor: color.withValues(alpha: 0.08),
+              side: BorderSide(color: color.withValues(alpha: 0.42)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            )
+          : null,
       iconSize: 18,
       icon: Icon(icon),
+    );
+  }
+}
+
+class _EfficiencyBadge extends StatelessWidget {
+  const _EfficiencyBadge({
+    required this.capacity,
+    required this.isFullBed,
+    super.key,
+  });
+
+  final int capacity;
+  final bool isFullBed;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = isFullBed ? catalogFullGreen : catalogBlue;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.11),
+        border: Border.all(color: color.withValues(alpha: 0.62)),
+        borderRadius: BorderRadius.circular(9),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            isFullBed ? Icons.bolt_rounded : Icons.layers_outlined,
+            color: color,
+            size: 15,
+          ),
+          const SizedBox(width: 6),
+          Flexible(
+            child: Wrap(
+              alignment: WrapAlignment.center,
+              spacing: 4,
+              children: [
+                Text(
+                  isFullBed ? 'Mesa Cheia!' : 'Mesa Média',
+                  style: TextStyle(
+                    color: color,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                Text(
+                  isFullBed
+                      ? 'Máxima Eficiência ($capacity un)'
+                      : '($capacity un)',
+                  style: TextStyle(
+                    color: color,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -321,11 +400,15 @@ class _BedOccupancy extends StatelessWidget {
           const SizedBox(height: 10),
           LayoutBuilder(
             builder: (context, constraints) {
-              final columns = capacity <= 4
-                  ? capacity
-                  : capacity <= 12
-                  ? math.min(capacity, 6)
-                  : math.min(capacity, 8);
+              final visibleSlots = math.min(capacity, 24);
+              final occupiedSlots = quantity == capacity
+                  ? visibleSlots
+                  : math.max(1, (quantity / capacity * visibleSlots).round());
+              final columns = visibleSlots <= 4
+                  ? visibleSlots
+                  : visibleSlots <= 12
+                  ? math.min(visibleSlots, 6)
+                  : math.min(visibleSlots, 8);
               const gap = 5.0;
               final slotWidth =
                   (constraints.maxWidth - (columns - 1) * gap) / columns;
@@ -333,8 +416,8 @@ class _BedOccupancy extends StatelessWidget {
               return Wrap(
                 spacing: gap,
                 runSpacing: 5,
-                children: List.generate(capacity, (index) {
-                  final occupied = index < quantity;
+                children: List.generate(visibleSlots, (index) {
+                  final occupied = index < occupiedSlots;
                   return AnimatedContainer(
                     key: ValueKey('bed-slot-$index'),
                     duration: const Duration(milliseconds: 160),

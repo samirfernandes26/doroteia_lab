@@ -287,7 +287,10 @@ void main() {
     await tester.tap(find.byKey(const ValueKey('dashboard-module-catalogo')));
     await tester.pumpAndSettle();
 
-    expect(find.text('Catálogo & Otimização de Lotes'), findsOneWidget);
+    expect(
+      find.text('Catálogo & Otimizador de Impressão por Mesa (3 Pontos)'),
+      findsOneWidget,
+    );
     await tester.tap(find.text('Voltar ao Dashboard'));
     await tester.pumpAndSettle();
 

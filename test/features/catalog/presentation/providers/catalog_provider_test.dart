@@ -22,12 +22,16 @@ void main() {
   const product = CatalogProduct(
     id: 'product-1',
     name: 'Chaveiro',
+    projectUrl: 'https://makerworld.com/model/chaveiro',
     dimensions: ProductDimensions(height: 5, width: 4, length: 2),
-    bedCapacity: 3,
+    bedCapacity: 6,
     singleUnitPrice: 15,
     singleUnitTimeMinutes: 40,
+    mediumCapacity: 3,
+    mediumUnitPrice: 12,
+    mediumTotalTimeMinutes: 75,
     fullBedUnitPrice: 10,
-    fullBedTotalTimeMinutes: 80,
+    fullBedTotalTimeMinutes: 120,
   );
 
   test('carrega produtos e controla a quantidade dentro dos limites', () async {
@@ -45,7 +49,10 @@ void main() {
     controller.incrementQuantity(product.id);
     controller.incrementQuantity(product.id);
     controller.incrementQuantity(product.id);
-    expect(controller.state.quantityFor(product), 3);
+    controller.incrementQuantity(product.id);
+    controller.incrementQuantity(product.id);
+    controller.incrementQuantity(product.id);
+    expect(controller.state.quantityFor(product), 6);
   });
 
   test('persiste inclusão, edição e exclusão', () async {
@@ -60,10 +67,14 @@ void main() {
     final edited = CatalogProduct(
       id: product.id,
       name: 'Chaveiro atualizado',
+      projectUrl: product.projectUrl,
       dimensions: product.dimensions,
       bedCapacity: product.bedCapacity,
       singleUnitPrice: product.singleUnitPrice,
       singleUnitTimeMinutes: product.singleUnitTimeMinutes,
+      mediumCapacity: product.mediumCapacity,
+      mediumUnitPrice: product.mediumUnitPrice,
+      mediumTotalTimeMinutes: product.mediumTotalTimeMinutes,
       fullBedUnitPrice: product.fullBedUnitPrice,
       fullBedTotalTimeMinutes: product.fullBedTotalTimeMinutes,
     );

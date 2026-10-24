@@ -11,22 +11,15 @@ final _dimension = NumberFormat('0.##', 'pt_BR');
 
 String formatCatalogQuote(CatalogProduct product, int quantity) {
   final normalizedQuantity = product.normalizeQuantity(quantity);
-  final fullBedSuffix = normalizedQuantity == product.bedCapacity
-      ? ' (Lote com Mesa Cheia)'
-      : '';
 
   return '''
-🧪 DOROTEIA LAB — ORÇAMENTO DE IMPRESSÃO 3D
-
 📦 Produto: ${product.name}
 📏 Dimensões: ${formatProductDimensions(product.dimensions)} cm
-📊 Quantidade Solicitada: $normalizedQuantity unidade(s)$fullBedSuffix
+📊 Quantidade Solicitada: $normalizedQuantity unidade(s)
 ⏳ Tempo Estimado de Produção: ${formatDuration(product.totalTimeMinutesFor(normalizedQuantity))}
 
 💰 Preço Unitário: ${_currency.format(product.unitPriceFor(normalizedQuantity))}
-💳 VALOR TOTAL: ${_currency.format(product.totalPriceFor(normalizedQuantity))}
-
-📲 Aguardamos sua confirmação para iniciar a produção!
+💳 Valor Total do Lote: ${_currency.format(product.totalPriceFor(normalizedQuantity))}
 '''
       .trim();
 }

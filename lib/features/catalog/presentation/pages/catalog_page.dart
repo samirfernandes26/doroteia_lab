@@ -122,6 +122,33 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
     }
   }
 
+  Future<void> _openProject(CatalogProduct product) async {
+    final messenger = ScaffoldMessenger.of(context);
+    final uri = Uri.tryParse(product.projectUrl.trim());
+    final isSupported =
+        uri != null && (uri.scheme == 'http' || uri.scheme == 'https');
+
+    if (!isSupported) {
+      messenger.showSnackBar(
+        const SnackBar(content: Text('Link do projeto inválido.')),
+      );
+      return;
+    }
+
+    try {
+      final opened = await launchUrl(uri, mode: LaunchMode.externalApplication);
+      if (!opened) {
+        messenger.showSnackBar(
+          const SnackBar(content: Text('Não foi possível abrir o projeto 3D.')),
+        );
+      }
+    } on PlatformException {
+      messenger.showSnackBar(
+        const SnackBar(content: Text('Não foi possível abrir o projeto 3D.')),
+      );
+    }
+  }
+
   Future<void> _signOut() async {
     await ref.read(authControllerProvider.notifier).signOut();
     if (!mounted) return;
@@ -188,6 +215,7 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
                             controller: controller,
                             onEdit: _openProductForm,
                             onDelete: _deleteProduct,
+                            onOpenProject: _openProject,
                             onWhatsApp: _shareOnWhatsApp,
                           ),
                       ],
@@ -268,7 +296,7 @@ class _CatalogHeader extends StatelessWidget {
                         foregroundColor: Colors.white,
                       ),
                       icon: const Icon(Icons.add_rounded, size: 19),
-                      label: const Text('Novo Produto'),
+                      label: const Text('Cadastrar Produto'),
                     ),
                     IconButton(
                       tooltip: 'Sair',
@@ -319,23 +347,9 @@ class _CatalogBrand extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        CircleAvatar(
-          radius: 24,
-          backgroundColor: catalogOrange,
-          child: Text(
-            'DL',
-            style: TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.w700,
-              fontSize: 18,
-            ),
-          ),
-        ),
-        SizedBox(width: 12),
-        Column(
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        const details = Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text.rich(
@@ -356,12 +370,35 @@ class _CatalogBrand extends StatelessWidget {
             ),
             SizedBox(height: 4),
             Text(
-              'Catálogo & Otimização de Lotes',
+              'Catálogo & Otimizador de Impressão por Mesa (3 Pontos)',
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
               style: TextStyle(color: catalogTextMuted, fontSize: 11),
             ),
           ],
-        ),
-      ],
+        );
+        final hasBoundedWidth = constraints.hasBoundedWidth;
+
+        return Row(
+          mainAxisSize: hasBoundedWidth ? MainAxisSize.max : MainAxisSize.min,
+          children: [
+            const CircleAvatar(
+              radius: 24,
+              backgroundColor: catalogOrange,
+              child: Text(
+                'DL',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 18,
+                ),
+              ),
+            ),
+            const SizedBox(width: 12),
+            if (hasBoundedWidth) Expanded(child: details) else details,
+          ],
+        );
+      },
     );
   }
 }
@@ -419,11 +456,14 @@ class _CatalogToolbar extends StatelessWidget {
           const status = Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.circle, color: Color(0xFF20D997), size: 9),
+              Icon(Icons.circle, color: catalogFullGreen, size: 9),
               SizedBox(width: 8),
-              Text(
-                'Otimização dinâmica de lote ativada',
-                style: TextStyle(color: catalogTextMuted, fontSize: 12),
+              Flexible(
+                child: Text(
+                  'Interpolação de 3 Pontos (1 Unidade → Mesa Média → Mesa Cheia)',
+                  textAlign: TextAlign.end,
+                  style: TextStyle(color: catalogTextMuted, fontSize: 12),
+                ),
               ),
             ],
           );
@@ -434,7 +474,15 @@ class _CatalogToolbar extends StatelessWidget {
               children: [search, const SizedBox(height: 14), status],
             );
           }
-          return Row(children: [search, const Spacer(), status]);
+          return Row(
+            children: [
+              search,
+              const SizedBox(width: 24),
+              Expanded(
+                child: Align(alignment: Alignment.centerRight, child: status),
+              ),
+            ],
+          );
         },
       ),
     );
@@ -448,6 +496,7 @@ class _ProductGrid extends StatelessWidget {
     required this.controller,
     required this.onEdit,
     required this.onDelete,
+    required this.onOpenProject,
     required this.onWhatsApp,
   });
 
@@ -456,6 +505,7 @@ class _ProductGrid extends StatelessWidget {
   final CatalogController controller;
   final ValueChanged<CatalogProduct> onEdit;
   final ValueChanged<CatalogProduct> onDelete;
+  final ValueChanged<CatalogProduct> onOpenProject;
   final void Function(CatalogProduct, int) onWhatsApp;
 
   @override
@@ -486,6 +536,9 @@ class _ProductGrid extends StatelessWidget {
                     onDecrement: () => controller.decrementQuantity(product.id),
                     onEdit: () => onEdit(product),
                     onDelete: () => onDelete(product),
+                    onOpenProject: product.projectUrl.trim().isEmpty
+                        ? null
+                        : () => onOpenProject(product),
                     onWhatsApp: () => onWhatsApp(product, quantity),
                   ),
                 );
